@@ -6,26 +6,25 @@ use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Address;
 
-class ForgotPassword extends Mailable
+class PasswordReset extends Mailable
 {
     use Queueable, SerializesModels;
 
-
-    protected $user;
+    protected $newPassword;
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct(User $user)
+    public function __construct($newPassword)
     {
         //
-        $this->user = $user;
+        $this->newPassword = $newPassword;
     }
 
     /**
@@ -37,7 +36,7 @@ class ForgotPassword extends Mailable
     {
         return new Envelope(
             from: new Address("webmaster@localhost.com", "Webmaster"),
-            subject: 'Forgot Password',
+            subject: 'Temporary Password',
         );
     }
 
@@ -49,9 +48,9 @@ class ForgotPassword extends Mailable
     public function content()
     {
         return new Content(
-            view: 'mail.forgot_password',
+            view: 'mail.reset_password',
             with: [
-                'user' => $this->user
+                'newPassword' => $this->newPassword
             ]
         );
     }
