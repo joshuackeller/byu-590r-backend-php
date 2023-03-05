@@ -18,14 +18,14 @@ class UserController extends BaseController
         return $this->sendResponse($user, 'User');
     }
 
-    public function getS3Url($path,$minutes=10)
-    {
-        if(!$path) {
-            return null;
-        }
-        $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes($minutes));
-        return $url;
-    }
+    // public function getS3Url($path,$minutes=10)
+    // {
+    //     if(!$path) {
+    //         return null;
+    //     }
+    //     $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes($minutes));
+    //     return $url;
+    // }
 
     public function uploadAvatar(Request $request)
     {
