@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\API;
-
 use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,16 +18,20 @@ class BookController extends BaseController
         return $this->sendResponse($books, 'User');
     }
 
-
-
-
-    
-    public function create(Request $request) 
-    {   
-
-         $validator = Validator::make($request->all(), [
-            'name' => 'required',
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request) 
+    {
+   
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|min:1',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg',
+            'description' => 'required|min:1',
+            'inventory_total_qty' => 'required|integer',
         ]);
         if($validator->fails()){
             return $this->sendError('Validation Error.', $validator->errors());     
@@ -45,51 +48,21 @@ class BookController extends BaseController
             );
             Storage::disk('s3')->setVisibility($path, "public");
             if(!$path) {
-                return $this->sendError($path, "ser profile avatar failed to upload");
+                return $this->sendError($path, "book image failed to upload");
             }
 
             $input['book_cover_picture'] = $path;
-            $book = Book::create($input);
         }
-        $success['name'] = $book->name;
+        $book = Book::create($input);
         if(isset($book->book_cover_picture)) {
-            $success['book_cover_picture_url'] = $this->getS3Url($path);
+            $book->book_cover_picture_url = $this->getS3Url($path);
         }
-        return $this->sendResponse($success, "Book created");
+        $book->inventory_total_qty = intval($book->inventory_total_qty);
+        $book->checked_qty = intval($book->checked_qty);
+        return $this->sendResponse($book, "Book created");
     }
 
-     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -100,7 +73,63 @@ class BookController extends BaseController
      */
     public function update(Request $request, $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|min:1',
+            'description' => 'required|min:1',
+            'inventory_total_qty' => 'required|integer'
+        ]);
+        if($validator->fails()){
+            return $this->sendError('Validation Error.', $validator->errors());     
+        }
+        $input = $request->all();
+        $book = Book::findorFail($id);
+        
+        $book->name = $input['name'];
+        $book->description = $input['description'];
+        $book->inventory_total_qty = $input['inventory_total_qty'];
+        
+
+        $book->save();
+      
+        $book->book_cover_picture_url = $this->getS3Url($book->book_cover_picture);
+        
+        
+        return $this->sendResponse($book, "Book updated");
+    }
+
+
+    public function uploadBookImage(Request $request, $id)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg',
+         ]);
+         $book = Book::findOrFail($id);
+
+        if ($request->hasFile('image')) { 
+
+            Storage::disk('s3')->delete($book->book_cover_picture);
+
+            $extension = request()->file('image')->getClientOriginalExtension();
+            $image_name = time() . "_" . mt_rand(1000000, 9999999) . "." . $extension;
+            $path = $request->file('image')->storeAs(
+                'images',
+                $image_name,
+                's3'
+            );
+            Storage::disk('s3')->setVisibility($path, "public");
+            if(!$path) {
+                return $this->sendError($path, "could not update book image");
+            }
+
+            $book->book_cover_picture = $path;
+            $book->save();
+           
+            $book->book_cover_picture_url = $this->getS3Url($book->book_cover_picture);
+
+            return $this->sendResponse($book, "User avatar uploaded");
+
+        }
+
     }
 
     /**
@@ -111,7 +140,35 @@ class BookController extends BaseController
      */
     public function destroy($id)
     {
-        //
+        $book = Book::findOrFail($id);
+        $success['name'] = $book->name;
+        $book->delete();
+
+        return $this->sendResponse($success, "Book deleted");
+    }
+
+    public function checkoutBook(Request $request, $id) {
+        $book = Book::findOrFail($id);
+        if($book->checked_qty >= $book->inventory_total_qty) {
+            return $this->sendError($book, "all books are currently checked out");
+        }
+        $book->checked_qty = $book->checked_qty + 1;
+        $book->save();
+        $success['book'] = $book;
+
+        return $this->sendResponse($success, "Book checked out");
+    } 
+
+    public function returnBook(Request $request, $id) {
+        $book = Book::findOrFail($id);
+        if($book->checked_qty <= 0) {
+            return $this->sendError($book, "no more books to return");
+        }
+        $book->checked_qty = $book->checked_qty - 1;
+        $book->save();
+        $success['book'] = $book;
+
+        return $this->sendResponse($success, "Book returned");
     }
 
 }

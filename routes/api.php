@@ -28,15 +28,20 @@ Route::controller(RegisterController::class)->group(function(){
 
 Route::middleware('auth:sanctum')->group( function () {
     Route::controller(UserController::class)->group(function(){
-    Route::get('user', 'getUser');
-    Route::post('user/upload_avatar', 'uploadAvatar');
-    Route::delete('user/remove_avatar','removeAvatar');
-    Route::post('user/send_verification_email','sendVerificationEmail');
-    Route::post('user/change_email', 'changeEmail');
+        Route::get('user', 'getUser');
+        Route::post('user/upload_avatar', 'uploadAvatar');
+        Route::delete('user/remove_avatar','removeAvatar');
+        Route::post('user/send_verification_email','sendVerificationEmail');
+        Route::post('user/change_email', 'changeEmail');
     });
 
     Route::resource('books', BookController::class);
 
+    Route::controller(BookController::class)->group(function(){
+        Route::put('books/{id}/checkout', 'checkoutBook');
+        Route::put('books/{id}/return', 'returnBook');
+        Route::post('books/{id}/update_image', 'uploadBookImage');
+    });
 });
 
 // Route::get('/greeting', function () {

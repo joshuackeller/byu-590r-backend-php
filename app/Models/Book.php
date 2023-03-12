@@ -18,6 +18,8 @@ class Book extends Model
         'name',
         'description',
         'book_cover_picture', 
+        'inventory_total_qty',
+        'checked_qty'
     ];
 
     public $timestamps = true;
