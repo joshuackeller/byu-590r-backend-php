@@ -142,7 +142,12 @@ class BookController extends BaseController
     {
         $book = Book::findOrFail($id);
         $success['name'] = $book->name;
-        $book->delete();
+
+        if($book->checked_qty == 0) {
+            $book->delete();
+        } else {
+            return $this->sendError('Cannot delete book until all checked out books are returned');     
+        }
 
         return $this->sendResponse($success, "Book deleted");
     }

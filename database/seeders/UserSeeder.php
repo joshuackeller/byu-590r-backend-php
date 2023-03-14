@@ -19,17 +19,17 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Josh Keller',
-                'email' => 'joshuack@byu.edu',
+                'email' => 'josh@email.com',
                 'email_verified_at' => null,
-                'password' => bcrypt("password"),
+                'password' => bcrypt("mypassword"),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'name' => 'Bob Sacamano',
-                'email' => 'bobsacamano@byu.edu',
+                'email' => 'bobsacamano@email.com',
                 'email_verified_at' => null,
-                'password' => bcrypt("password1"),
+                'password' => bcrypt("mypassword"),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ]
