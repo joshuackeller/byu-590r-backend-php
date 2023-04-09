@@ -4,6 +4,7 @@ use App\Http\Controllers\API\BookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\RegisterController;
+use App\Http\Controllers\API\TestController;
 use App\Http\Controllers\API\UserController;
 
 /*
@@ -16,6 +17,10 @@ app/Http/Controllers/API/UserController.php| Here is where you can register API 
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+Route::controller(TestController::class)->group(function(){
+    Route::get('', 'index');
+});
 
 Route::controller(RegisterController::class)->group(function(){
     Route::post("register", "register");
@@ -38,7 +43,7 @@ Route::middleware('auth:sanctum')->group( function () {
     Route::resource('books', BookController::class);
 
     Route::controller(BookController::class)->group(function(){
-        Route::put('books/{id}/checkout', 'checkoutBook');
+        Route::post('books/{id}/checkout', 'checkoutBook');
         Route::put('books/{id}/return', 'returnBook');
         Route::post('books/{id}/update_image', 'uploadBookImage');
     });

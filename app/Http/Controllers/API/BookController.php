@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\API;
 use App\Models\Book;
+use App\Models\Checkout;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends BaseController
 {
@@ -153,27 +157,76 @@ class BookController extends BaseController
     }
 
     public function checkoutBook(Request $request, $id) {
-        $book = Book::findOrFail($id);
-        if($book->checked_qty >= $book->inventory_total_qty) {
-            return $this->sendError($book, "all books are currently checked out");
+
+        $request['checkout_date'] = date('Y-m-d');
+        $validator = Validator::make($request->all(), [
+        'checkout_date' => 'required',
+        'due_date' => 'required|date_format:Y-m-d|after_or_equal:checkout_date'
+        ]);
+        
+        if($validator->fails()){
+        return $this->sendError('Validation Error.', $validator->errors());
         }
+        
+        $book = Book::findOrFail($id);
         $book->checked_qty = $book->checked_qty + 1;
-        $book->save();
-        $success['book'] = $book;
-
-        return $this->sendResponse($success, "Book checked out");
-    } 
-
-    public function returnBook(Request $request, $id) {
-        $book = Book::findOrFail($id);
-        if($book->checked_qty <= 0) {
-            return $this->sendError($book, "no more books to return");
+        
+        if($book->checked_qty > $book->inventory_total_qty) {
+        return $this->sendError('Checkout Out Books Can Not Exceed Inventory!');
         }
-        $book->checked_qty = $book->checked_qty - 1;
+        
+        $checkoutId = Checkout::insertGetId([
+        'checkout_date' => $request['checkout_date'],
+        'due_date' => $request['due_date']
+        ]);
+        
+        $authUser = Auth::user();
+        $user = User::findOrFail($authUser->id);
+        DB::table('user_book_checkouts')->insert([
+        'user_id' => $user->id,
+        'book_id' => $book->id,
+        'checkout_id' => $checkoutId
+        ]);
+        
         $book->save();
+        
+        $book = Book::findOrFail($id)->load(['checkouts' => function ($query){
+        $query->whereNull('checkin_date');
+        
+        }]);
         $success['book'] = $book;
+        return $this->sendResponse($success, 'Book Checkedout');
+        
+        }
 
-        return $this->sendResponse($success, "Book returned");
-    }
+        public function returnBook($id) {
+
+            $book = Book::findOrFail($id);
+            $book->checked_qty = $book->checked_qty - 1;
+            
+            if($book->checked_qty < 0) {
+            return $this->sendError('Can not return additional books. All returned!');
+            }
+            
+            
+            $authUser = Auth::user();
+            $user = User::findOrFail($authUser->id);
+            $checkoutID = DB::table('user_book_checkouts');
+            
+            DB::table('checkouts')->update([
+            'checkin_date' => date('Y-m-d')
+            ]);
+            
+            
+            $book->save();
+            
+            $book = Book::findOrFail($id)->load(['checkouts' => function ($query){
+            $query->whereNotNull('checkin_date');
+            
+            }]);
+            $success['book'] = $book;
+            return $this->sendResponse($success, 'Book Returned');
+            
+            }
 
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Book extends Model
 {
@@ -29,4 +30,8 @@ class Book extends Model
         'updated_at',
         'deleted_at'
     ];
+    public function checkouts(): BelongsToMany
+    {
+        return $this->belongsToMany(Checkout::class,'user_book_checkouts','book_id')->withPivot('user_id');
+    }
 }
