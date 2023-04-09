@@ -1,10 +1,12 @@
-# fly.toml file generated for byu-backend-php on 2023-04-08T20:36:25-06:00
+# fly.toml file generated for byu-backend-php on 2023-04-08T20:56:55-06:00
 
 app = "byu-backend-php"
 kill_signal = "SIGINT"
 kill_timeout = 5
 primary_region = "iad"
-processes = []
+[processes]
+  app = ""
+  cron = "cron -f"
 
 [build]
   [build.args]
@@ -19,6 +21,7 @@ processes = []
 
 [experimental]
   auto_rollback = true
+
 
 [[services]]
   http_checks = []
