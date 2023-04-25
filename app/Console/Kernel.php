@@ -16,7 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         //Adding for testing frequency,  change to weekly or depending on what is instructed.
-        $schedule->command('auto:overdue-books --email=joshuackeller@gmail.com')->everyMinute();
+        // $schedule->command('auto:overdue-books --email=joshuackeller@gmail.com')->everyMinute();
     }
 
     /**

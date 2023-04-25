@@ -177,7 +177,7 @@ class BookController extends BaseController
         
         $checkoutId = Checkout::insertGetId([
         'checkout_date' => $request['checkout_date'],
-        'due_date' => $request['due_date']
+        'due_date' => $request['due_date'] 
         ]);
         
         $authUser = Auth::user();
